@@ -51,7 +51,9 @@ class Connection implements LoggerAwareInterface
         $this->setOptions($options);
         $this->setLogger(new NullLogger());
         $this->msg_factory = new Factory();
-        stream_set_blocking($this->stream, $this->options['blocking']);
+        if (false == $this->options['blocking']) {
+            stream_set_blocking($this->stream, $this->options['blocking']);
+        }
     }
 
     public function __destruct()

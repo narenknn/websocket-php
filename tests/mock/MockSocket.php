@@ -19,7 +19,6 @@ class MockSocket
         $null_handled_functions = [
             'get_resource_type' => null,
             'stream_get_meta_data' => ['eof' => false, 'timed_out' => false],
-            'stream_set_blocking' => null,
             'feof' => false,
             'fclose' => true,
             'ftell' => 0,

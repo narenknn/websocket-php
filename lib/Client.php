@@ -38,7 +38,7 @@ class Client implements LoggerAwareInterface
         'persistent'    => false,
         'return_obj'    => false,
         'timeout'       => 5,
-        'blocking'      => true,
+        'blocking'      => false,
     ];
 
     private $socket_uri;
