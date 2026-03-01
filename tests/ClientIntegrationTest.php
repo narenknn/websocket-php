@@ -32,7 +32,7 @@ class ClientIntegrationTest extends TestCase
 
     public function testPostmanEchoConnectAndHandshake(): void
     {
-        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT]);
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => true]);
         // Trigger connection by sending a message
         $client->send('test');
         $this->assertTrue($client->isConnected(), 'Failed to connect to ws.postman-echo.com');
@@ -41,7 +41,7 @@ class ClientIntegrationTest extends TestCase
 
     public function testPostmanEchoSendTextMessage(): void
     {
-        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT]);
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => true]);
         $message = 'Test message for Postman';
         $client->send($message);
         $response = $client->receive();
@@ -57,21 +57,21 @@ class ClientIntegrationTest extends TestCase
 
     public function testPostmanEchoMultipleMessages(): void
     {
-        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT]);
-        
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => true]);
+
         $messages = ['One', 'Two', 'Three', 'Four', 'Five'];
         foreach ($messages as $message) {
             $client->send($message);
             $response = $client->receive();
             $this->assertEquals($message, $response);
         }
-        
+
         $client->close();
     }
 
     public function testPostmanEchoPingPong(): void
     {
-        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT]);
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => true]);
         // Note: Echo server may not respond to ping, but should not error
         $client->send('ping-test');
         $response = $client->receive();
@@ -81,7 +81,7 @@ class ClientIntegrationTest extends TestCase
 
     public function testPostmanEchoLargeMessage(): void
     {
-        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT]);
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => true]);
         $message = str_repeat('TestData-', 2000);
         $client->send($message, 'text', false);
         $response = $client->receive();
@@ -91,13 +91,13 @@ class ClientIntegrationTest extends TestCase
 
     public function testPostmanEchoConnectionClose(): void
     {
-        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT]);
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => true]);
         $client->send('trigger connection');
-        
+
         $this->assertTrue($client->isConnected());
-        
+
         $client->close(1000, 'Test complete');
-        
+
         $this->assertFalse($client->isConnected());
         $this->assertEquals(1000, $client->getCloseStatus());
     }
@@ -108,7 +108,7 @@ class ClientIntegrationTest extends TestCase
 
     public function testBinanceStreamConnect(): void
     {
-        $client = new Client(self::SERVER_BINANCE, ['timeout' => self::TIMEOUT]);
+        $client = new Client(self::SERVER_BINANCE, ['timeout' => self::TIMEOUT, 'blocking' => true]);
         // Trigger connection
         $client->send('');
         $this->assertTrue($client->isConnected(), 'Failed to connect to Binance stream');
@@ -117,13 +117,13 @@ class ClientIntegrationTest extends TestCase
 
     public function testBinanceStreamReceiveRealTimeData(): void
     {
-        $client = new Client(self::SERVER_BINANCE, ['timeout' => self::TIMEOUT]);
-        
+        $client = new Client(self::SERVER_BINANCE, ['timeout' => self::TIMEOUT, 'blocking' => true]);
+
         // Wait for at least one message
         $received = false;
         $attempts = 0;
         $maxAttempts = 10;
-        
+
         while (!$received && $attempts < $maxAttempts) {
             try {
                 $response = $client->receive();
@@ -138,18 +138,18 @@ class ClientIntegrationTest extends TestCase
                 usleep(100000); // 100ms
             }
         }
-        
+
         $this->assertTrue($received, 'Did not receive any data from Binance stream');
         $client->close();
     }
 
     public function testBinanceStreamReceiveMultipleMessages(): void
     {
-        $client = new Client(self::SERVER_BINANCE, ['timeout' => self::TIMEOUT]);
-        
+        $client = new Client(self::SERVER_BINANCE, ['timeout' => self::TIMEOUT, 'blocking' => true]);
+
         $messages = [];
         $targetMessages = 3;
-        
+
         $startTime = time();
         while (count($messages) < $targetMessages && (time() - $startTime) < 10) {
             try {
@@ -164,20 +164,71 @@ class ClientIntegrationTest extends TestCase
                 // Continue trying
             }
         }
-        
+
         $this->assertGreaterThanOrEqual(1, count($messages), 'Did not receive enough messages from Binance');
         $client->close();
     }
 
     public function testBinanceStreamConnectionClose(): void
     {
-        $client = new Client(self::SERVER_BINANCE, ['timeout' => self::TIMEOUT]);
+        $client = new Client(self::SERVER_BINANCE, ['timeout' => self::TIMEOUT, 'blocking' => true]);
         $client->send('');
-        
+
         $this->assertTrue($client->isConnected());
-        
+
         $client->close(1000, 'Done testing');
-        
+
         $this->assertFalse($client->isConnected());
+    }
+
+    // =========================================================================
+    // Non-Blocking Mode Tests
+    // =========================================================================
+
+    public function testNonBlockingSendAndReceive(): void
+    {
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+        $message = 'Test message for Postman';
+        $client->send($message);
+        $response = $client->receive();
+        $this->assertEquals($message, $response);
+        $client->close();
+    }
+
+    public function testNonBlockingMultipleMessages(): void
+    {
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+
+        $messages = ['One', 'Two', 'Three', 'Four', 'Five'];
+        foreach ($messages as $message) {
+            $client->send($message);
+            $response = $client->receive();
+            $this->assertEquals($message, $response);
+        }
+
+        $client->close();
+    }
+
+    public function testNonBlockingLargeMessage(): void
+    {
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+        $message = str_repeat('TestData-', 2000);
+        $client->send($message, 'text', false);
+        $response = $client->receive();
+        $this->assertEquals($message, $response);
+        $client->close();
+    }
+
+    public function testNonBlockingConnectionClose(): void
+    {
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+        $client->send('trigger connection');
+
+        $this->assertTrue($client->isConnected());
+
+        $client->close(1000, 'Test complete');
+
+        $this->assertFalse($client->isConnected());
+        $this->assertEquals(1000, $client->getCloseStatus());
     }
 }
