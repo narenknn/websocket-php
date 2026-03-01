@@ -38,6 +38,7 @@ class Client implements LoggerAwareInterface
         'persistent'    => false,
         'return_obj'    => false,
         'timeout'       => 5,
+        'blocking'      => true,
     ];
 
     private $socket_uri;
@@ -232,7 +233,6 @@ class Client implements LoggerAwareInterface
         }
         return $return;
     }
-
 
     /* ---------- Connection functions ----------------------------------------------- */
 
@@ -442,11 +442,11 @@ class Client implements LoggerAwareInterface
             }
 
             $keyAccept = trim($matches[1]);
-            $expectedResonse = base64_encode(
+            $expectedResponse = base64_encode(
                 pack('H*', sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'))
             );
 
-            if ($keyAccept !== $expectedResonse) {
+            if ($keyAccept !== $expectedResponse) {
                 $error = 'Server sent bad upgrade response.';
                 $this->logger->error($error);
                 throw new ConnectionException($error);
