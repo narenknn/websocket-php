@@ -197,6 +197,7 @@ class Connection implements LoggerAwareInterface
             throw new ConnectionException($warning, ConnectionException::BAD_OPCODE);
         }
         $opcode = $opcode_ints[$opcode_int];
+        $nbret[2] = $opcode;
 
         // Masking bit
         $masked = (bool)($byte_2 & 0b10000000);
@@ -205,6 +206,7 @@ class Connection implements LoggerAwareInterface
 
         // Payload length
         $payload_length = $byte_2 & 0b01111111;
+        // print ("payload_len:" . $payload_length . " opcode:" . $opcode . "\n");
 
         if (1 == $this->nbstat['state']) {
             if ($payload_length > 125) {
@@ -579,6 +581,7 @@ class Connection implements LoggerAwareInterface
         do {
             $length = strlen($data);
             $written = fwrite($this->stream, $data);
+            // print ("written:" . $written . " length:" . $length . "\n");
             if ((false == $this->options['blocking']) && ($written < $length)) {
                 /* when non-blocking, less data may be written, try few more times */
                 usleep(1000);
