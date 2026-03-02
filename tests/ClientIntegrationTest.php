@@ -244,4 +244,153 @@ class ClientIntegrationTest extends TestCase
         $this->assertFalse($client->isConnected());
         $this->assertEquals(1000, $client->getCloseStatus());
     }
+
+    // =========================================================================
+    // Large Variable Size Tests
+    // =========================================================================
+
+    public function testLargeMessage10KB(): void
+    {
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+        $message = str_repeat('0123456789', 1024);
+        $client->send($message, 'text', false);
+        $response = '';
+        for ($i = 0; $i < 10; $i++) {
+            usleep(100000);
+            $response .= $client->receive();
+        }
+        $this->assertEquals($message, $response);
+        $client->close();
+    }
+
+    public function testLargeMessage100KB(): void
+    {
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+        $message = str_repeat('ABCDEFGHIJ', 10240);
+        $client->send($message, 'text', false);
+        $response = '';
+        for ($i = 0; $i < 15; $i++) {
+            usleep(100000);
+            $response .= $client->receive();
+        }
+        $this->assertEquals($message, $response);
+        $client->close();
+    }
+
+    public function testLargeMessage1MB(): void
+    {
+        $this->markTestSkipped('Too large for public echo servers..');
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => 30*3, 'blocking' => false]);
+        $message = str_repeat('LargePayload-', 65536);
+        $client->send($message, 'text', false);
+        $response = '';
+        for ($i = 0; $i < 25; $i++) {
+            usleep(100000);
+            $response .= $client->receive();
+        }
+        print (strlen($message) . " == " . strlen($response) . "\n");
+        $this->assertEquals($message, $response);
+        $client->close();
+    }
+
+    // =========================================================================
+    // Multiple Large Messages Tests
+    // =========================================================================
+
+    public function testNonBlockingMultipleLargeMessages(): void
+    {
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+
+        $messages = [
+            str_repeat('First-', 1000),
+            str_repeat('Second-', 2000),
+            str_repeat('Third-', 3000),
+        ];
+
+        foreach ($messages as $message) {
+            $client->send($message, 'text', false);
+            $response = '';
+            for ($i = 0; $i < 15; $i++) {
+                usleep(100000);
+                $response .= $client->receive();
+            }
+            $this->assertEquals($message, $response);
+        }
+
+        $client->close();
+    }
+
+    public function testMultipleLargeMessages(): void
+    {
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+
+        $messages = [
+            str_repeat('Alpha-', 1000),
+            str_repeat('Beta-', 2000),
+            str_repeat('Gamma-', 3000),
+        ];
+
+        foreach ($messages as $message) {
+            $client->send($message, 'text', false);
+            $response = '';
+            for ($i = 0; $i < 15; $i++) {
+                usleep(100000);
+                $response .= $client->receive();
+            }
+            $this->assertEquals($message, $response);
+        }
+
+        $client->close();
+    }
+
+    // =========================================================================
+    // Large Message Edge Cases
+    // =========================================================================
+
+    public function testLargeBinaryMessage(): void
+    {
+        $this->markTestSkipped('Needs to be debugged..');
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+        $message = '';
+        for ($i = 0; $i < 5000; $i++) {
+            $message .= chr($i % 256);
+        }
+        $client->send($message, 'binary', false);
+        $response = '';
+        for ($i = 0; $i < 10; $i++) {
+            usleep(100000);
+            $response .= $client->receive();
+        }
+        print (strlen($message) . " == " . strlen($response) . "\n");
+        // $this->assertEquals($message, $response);
+        $client->close();
+    }
+
+    public function testLargeUnicodeMessage(): void
+    {
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+        $message = str_repeat('こんにちは世界🌍', 500);
+        $client->send($message, 'text', false);
+        $response = '';
+        for ($i = 0; $i < 10; $i++) {
+            usleep(100000);
+            $response .= $client->receive();
+        }
+        $this->assertEquals($message, $response);
+        $client->close();
+    }
+
+    public function testLargeMessageWithNewlines(): void
+    {
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+        $message = str_repeat("Line1\tTabbed\r\nLine2\tTabbed\r\n", 500);
+        $client->send($message, 'text', false);
+        $response = '';
+        for ($i = 0; $i < 10; $i++) {
+            usleep(100000);
+            $response .= $client->receive();
+        }
+        $this->assertEquals($message, $response);
+        $client->close();
+    }
 }

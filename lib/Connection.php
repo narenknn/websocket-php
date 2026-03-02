@@ -575,7 +575,19 @@ class Connection implements LoggerAwareInterface
     public function write(string $data): void
     {
         $length = strlen($data);
-        $written = fwrite($this->stream, $data);
+        $loopcnt = 0;
+        do {
+            $length = strlen($data);
+            $written = fwrite($this->stream, $data);
+            if ((false == $this->options['blocking']) && ($written < $length)) {
+                /* when non-blocking, less data may be written, try few more times */
+                usleep(1000);
+                $data = substr($data, -($length-$written));
+                $loopcnt++;
+                // if ($loopcnt > 20) break;
+                continue;
+            }
+        } while ($written < $length);
         if ($written === false) {
             $this->throwException("Failed to write {$length} bytes.");
         }
