@@ -193,7 +193,7 @@ class ClientIntegrationTest extends TestCase
         $client->send($message);
         $response = '';
         for ($i=0; $i<10; $i++) {
-            usleep(1000);
+            usleep(100000);
             $response .= $client->receive();
         }
         $this->assertEquals($message, $response);
@@ -209,7 +209,7 @@ class ClientIntegrationTest extends TestCase
             $client->send($message);
             $response = '';
             for ($i=0; $i<10; $i++) {
-                usleep(1000);
+                usleep(100000);
                 $response .= $client->receive();
             }
             $this->assertEquals($message, $response);
