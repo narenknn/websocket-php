@@ -181,9 +181,8 @@ class Connection implements LoggerAwareInterface
             $this->nbstat['data0'] = $this->read(2);
             if (strlen($this->nbstat['data0']) < 2) {
                 return $nbret;
-            } else {
-                $this->nbstat['state'] = 1;
             }
+            $this->nbstat['state'] = 1;
         }
         list ($byte_1, $byte_2) = array_values(unpack('C*', $this->nbstat['data0']));
         $final = (bool)($byte_1 & 0b10000000); // Final fragment marker.
@@ -224,6 +223,14 @@ class Connection implements LoggerAwareInterface
                 }
             }
             $this->nbstat['state'] = $masked ? 2 : 3;
+        } else { /* if entered again, I need to restore the $payload_length */
+            if ($payload_length > 125) {
+                if ($payload_length === 126) {
+                    $payload_length = current(unpack('n', $this->nbstat['data1']));
+                } else {
+                    $payload_length = current(unpack('J', $this->nbstat['data1']));
+                }
+            }
         }
 
         // Get masking key.
@@ -232,14 +239,14 @@ class Connection implements LoggerAwareInterface
             if (strlen($this->nbstat['data2']) < 2) {
                 return $nbret;
             }
-            $masking_key = $this->nbstat['data2'];
             $this->nbstat['state'] = 3;
         }
+        $masking_key = $this->nbstat['data2'];
 
         // Get the actual payload, if any (might not be for e.g. close frames.
         if (3 == $this->nbstat['state']) {
             if ($payload_length > 0) {
-                $this->nbstat['data3'] = $this->read($payload_length);
+                $this->nbstat['data3'] .= $this->read($payload_length - strlen($this->nbstat['data3']));
                 if (strlen($this->nbstat['data3']) < $payload_length) {
                     return $nbret;
                 }
@@ -479,12 +486,17 @@ class Connection implements LoggerAwareInterface
      */
     public function gets(int $length): string
     {
+        stream_set_blocking($this->stream, true);
+
         $line = fgets($this->stream, $length);
         if ($line === false) {
             $this->throwException('Could not read from stream');
         }
         $read = strlen($line);
         $this->logger->debug("Read {$read} bytes of line.");
+
+        stream_set_blocking($this->stream, $this->options['blocking']);
+
         return $line;
     }
 

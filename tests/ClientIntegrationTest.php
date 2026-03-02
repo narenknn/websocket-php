@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 
 class ClientIntegrationTest extends TestCase
 {
+    private const SERVER_LOCAL = 'ws://127.0.0.1:9999';
     private const SERVER_POSTMAN = 'wss://ws.postman-echo.com/raw';
     private const SERVER_BINANCE = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
 
@@ -190,7 +191,11 @@ class ClientIntegrationTest extends TestCase
         $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
         $message = 'Test message for Postman';
         $client->send($message);
-        $response = $client->receive();
+        $response = '';
+        for ($i=0; $i<10; $i++) {
+            usleep(1000);
+            $response .= $client->receive();
+        }
         $this->assertEquals($message, $response);
         $client->close();
     }
@@ -202,7 +207,11 @@ class ClientIntegrationTest extends TestCase
         $messages = ['One', 'Two', 'Three', 'Four', 'Five'];
         foreach ($messages as $message) {
             $client->send($message);
-            $response = $client->receive();
+            $response = '';
+            for ($i=0; $i<10; $i++) {
+                usleep(1000);
+                $response .= $client->receive();
+            }
             $this->assertEquals($message, $response);
         }
 
@@ -214,7 +223,11 @@ class ClientIntegrationTest extends TestCase
         $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
         $message = str_repeat('TestData-', 2000);
         $client->send($message, 'text', false);
-        $response = $client->receive();
+        $response = '';
+        for ($i=0; $i<10; $i++) {
+            usleep(100000);
+            $response .= $client->receive();
+        }
         $this->assertEquals($message, $response);
         $client->close();
     }
