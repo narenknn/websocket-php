@@ -5,7 +5,7 @@
 
 ## Description
 
-This project was forked from archived project [Textalk/websocket-php](https://github.com/Textalk/websocket-php) and upgraded with non-blocking writes. Primary goal is to use only the client for non-blocking reads (server is largely left unchanged, but the state is not checked anymore). Non-blocking reads is enabled for client by default and returns empty message immediately. This feature is useful, if one has a threading mechanism already and just want to check for received messages.
+This project was forked from archived project [Textalk/websocket-php](https://github.com/Textalk/websocket-php) and upgraded with non-blocking reads. Primary goal is to use only the client for non-blocking reads (server is largely left unchanged, but the state is not checked anymore). Non-blocking reads is enabled for client by default and returns empty message immediately. This feature is useful, if one has a threading mechanism already and just want to check for received messages.
 
 ## Websocket Client and Server for PHP
 
