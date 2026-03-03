@@ -28,6 +28,8 @@ class Connection implements LoggerAwareInterface
     private $read_buffer;
     private $msg_factory;
     private $options = [];
+    private $pings = 0;
+    private $pongs = 0;
     private $nbstat = [
         'state' => 0,
         'data' => '',
@@ -109,6 +111,9 @@ class Connection implements LoggerAwareInterface
     // Push a message to stream
     public function pushMessage(Message $message, bool $masked = true): void
     {
+        if ('ping' == $message->getOpcode()) { /* keep count */
+            $this->pings++;
+        }
         $frames = $message->getFrames($masked, $this->options['fragment_size']);
         foreach ($frames as $frame) {
             $this->pushFrame($frame);
@@ -130,6 +135,8 @@ class Connection implements LoggerAwareInterface
 
             if ($opcode == 'close') {
                 $this->close();
+            } else if ('pong' == $opcode) {
+                $this->pongs++;
             }
 
             // Continuation and factual opcode
@@ -532,6 +539,14 @@ class Connection implements LoggerAwareInterface
         $this->nbstat['data'] = '';
         $this->nbstat['dlen'] = 0;
         return $data;
+    }
+
+    /**
+     * Returns true when equal pongs received for pings
+     */
+    public function pongs4pings(): bool
+    {
+        return ($this->pings > 0) && ($this->pings == $this->pongs);
     }
 
     /**

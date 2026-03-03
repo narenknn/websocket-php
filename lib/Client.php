@@ -159,6 +159,14 @@ class Client implements LoggerAwareInterface
     }
 
     /**
+     * Returns true when equal pongs received for pings.
+     */
+    public function pongs4pings(): bool
+    {
+        return $this->connection->pongs4pings();
+    }
+
+    /**
      * Send message.
      * @param string $payload Message to send.
      * @param string $opcode Opcode to use, default: 'text'.

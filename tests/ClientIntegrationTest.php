@@ -401,4 +401,49 @@ class ClientIntegrationTest extends TestCase
         $this->assertEquals($message, $response);
         $client->close();
     }
+
+    // =========================================================================
+    // Ping/Pong Tests
+    // =========================================================================
+    public function testPingPongSingle(): void
+    {
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+        $client->send('trigger');
+        $this->assertFalse($client->pongs4pings(), 'Check initial state');
+        $client->ping();
+
+        $rmsg = '';
+        for ($i=0; $i<10; $i++) {
+            usleep(100000);
+            $rmsg .= $client->receive();
+        }
+
+        $this->assertEquals('trigger', $rmsg);
+        $this->assertTrue($client->pongs4pings(), 'Pong not received for ping');
+        $client->close();
+    }
+
+    public function testPingPongMultipleRandom(): void
+    {
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+
+        $client->send('trigger');
+        $this->assertFalse($client->pongs4pings(), 'Check initial state');
+
+        $pingCount = 5;
+        for ($i = 0; $i < $pingCount; $i++) {
+            $client->ping('');
+            usleep(100000);
+        }
+
+        $rmsg = '';
+        for ($i=0; $i<10; $i++) {
+            usleep(100000);
+            $rmsg .= $client->receive();
+        }
+
+        $this->assertEquals('trigger', $rmsg);
+        $this->assertTrue($client->pongs4pings(), 'Pong not received for ping');
+        $client->close();
+    }
 }
