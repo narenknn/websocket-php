@@ -17,6 +17,7 @@ class ClientIntegrationTest extends TestCase
 {
     private const SERVER_LOCAL = 'ws://127.0.0.1:9999';
     private const SERVER_POSTMAN = 'wss://ws.postman-echo.com/raw';
+    private const SERVER_WEBSOCKET = 'wss://echo.websocket.org';
     private const SERVER_BINANCE = 'wss://stream.binance.com:9443/ws/btcusdt@trade';
 
     private const TIMEOUT = 10;
@@ -52,8 +53,17 @@ class ClientIntegrationTest extends TestCase
 
     public function testPostmanEchoSendBinaryMessage(): void
     {
-        // Note: Postman echo server may not support binary properly
-        $this->assertTrue(true); // Placeholder - binary handling varies by server
+        $this->markTestSkipped('Seems like servers are not supporting echo binary data..');
+        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => true]);
+        $message = '';
+        for ($i = 1; $i < 500; $i++) {
+            $message .= chr($i % 256);
+        }
+        $client->send($message, 'binary', false);
+        $response = $client->receive();
+        // print (strlen($message) . " == " . strlen($response) . "\n");
+        $this->assertEquals($message, $response);
+        $client->close();
     }
 
     public function testPostmanEchoMultipleMessages(): void
@@ -279,8 +289,7 @@ class ClientIntegrationTest extends TestCase
 
     public function testLargeMessage1MB(): void
     {
-        $this->markTestSkipped('Too large for public echo servers..');
-        $client = new Client(self::SERVER_POSTMAN, ['timeout' => 30*3, 'blocking' => false]);
+        $client = new Client(self::SERVER_LOCAL, ['timeout' => 30*3, 'blocking' => false]);
         $message = str_repeat('LargePayload-', 65536);
         $client->send($message, 'text', false);
         $response = '';
@@ -288,7 +297,6 @@ class ClientIntegrationTest extends TestCase
             usleep(100000);
             $response .= $client->receive();
         }
-        print (strlen($message) . " == " . strlen($response) . "\n");
         $this->assertEquals($message, $response);
         $client->close();
     }
@@ -349,8 +357,8 @@ class ClientIntegrationTest extends TestCase
 
     public function testLargeBinaryMessage(): void
     {
-        $this->markTestSkipped('Needs to be debugged..');
-        $client = new Client(self::SERVER_POSTMAN, ['timeout' => self::TIMEOUT, 'blocking' => false]);
+        $this->markTestSkipped('Seems like servers are not supporting echo binary data..');
+        $client = new Client(self::SERVER_WEBSOCKET, ['timeout' => self::TIMEOUT, 'blocking' => false]);
         $message = '';
         for ($i = 0; $i < 5000; $i++) {
             $message .= chr($i % 256);
@@ -361,8 +369,8 @@ class ClientIntegrationTest extends TestCase
             usleep(100000);
             $response .= $client->receive();
         }
-        print (strlen($message) . " == " . strlen($response) . "\n");
-        // $this->assertEquals($message, $response);
+        // print (strlen($message) . " == " . strlen($response) . "\n");
+        $this->assertEquals($message, $response);
         $client->close();
     }
 

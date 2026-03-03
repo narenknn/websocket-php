@@ -182,6 +182,7 @@ class Connection implements LoggerAwareInterface
             if (strlen($this->nbstat['data0']) < 2) {
                 return $nbret;
             }
+            // print ("header:" . bin2hex($this->nbstat['data0']) . "\n");
             $this->nbstat['state'] = 1;
         }
         list ($byte_1, $byte_2) = array_values(unpack('C*', $this->nbstat['data0']));
@@ -197,7 +198,6 @@ class Connection implements LoggerAwareInterface
             throw new ConnectionException($warning, ConnectionException::BAD_OPCODE);
         }
         $opcode = $opcode_ints[$opcode_int];
-        $nbret[2] = $opcode;
 
         // Masking bit
         $masked = (bool)($byte_2 & 0b10000000);
@@ -206,7 +206,6 @@ class Connection implements LoggerAwareInterface
 
         // Payload length
         $payload_length = $byte_2 & 0b01111111;
-        // print ("payload_len:" . $payload_length . " opcode:" . $opcode . "\n");
 
         if (1 == $this->nbstat['state']) {
             if ($payload_length > 125) {
@@ -313,6 +312,8 @@ class Connection implements LoggerAwareInterface
         } else {
             $data .= $payload;
         }
+
+        // print("pushFrame:" . $frame[2] . " final:" . ($frame[0] ? "true" : "false") . " len:" . strlen($frame[1]) . " datalen:" . strlen($data) . " data:" . bin2hex($data) . "\n");
 
         $this->write($data);
 
@@ -567,6 +568,7 @@ class Connection implements LoggerAwareInterface
             $read = strlen($data);
             $this->logger->debug("Read {$read} of {$length} bytes.");
         }
+
         return $data;
     }
 
@@ -581,7 +583,6 @@ class Connection implements LoggerAwareInterface
         do {
             $length = strlen($data);
             $written = fwrite($this->stream, $data);
-            // print ("written:" . $written . " length:" . $length . "\n");
             if ((false == $this->options['blocking']) && ($written < $length)) {
                 /* when non-blocking, less data may be written, try few more times */
                 usleep(1000);
